@@ -1,6 +1,9 @@
+/**
+ * @fileOverview Production-grade audio transport and sequencer controller.
+ */
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Play, Pause, Music, Activity, Waves, Mic2, Disc, Sparkles } from 'lucide-react';
 import { STEMS, StemType } from '@/lib/song-data';
 import { cn } from '@/lib/utils';
@@ -27,7 +30,7 @@ export function AudioController({ onTimeUpdate, onStateChange, onRegenerate, tot
   const [currentTime, setCurrentTime] = useState(0);
   const [activeSteps, setActiveSteps] = useState<Record<string, boolean[]>>({});
   
-  // Initialize grid
+  // Initialize deterministic sequencer grid
   useEffect(() => {
     const grid: Record<string, boolean[]> = {};
     STEMS.forEach(s => {
@@ -36,17 +39,11 @@ export function AudioController({ onTimeUpdate, onStateChange, onRegenerate, tot
     setActiveSteps(grid);
   }, []);
 
-  const toggleStep = (stem: string, index: number) => {
-    setActiveSteps(prev => ({
-      ...prev,
-      [stem]: prev[stem].map((v, i) => i === index ? !v : v)
-    }));
-  };
-
   useEffect(() => {
+    let interval: any;
     if (isPlaying) {
       Tone.getTransport().start();
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         const time = Tone.getTransport().seconds;
         if (time >= totalDuration) {
           handleStop();
@@ -54,11 +51,11 @@ export function AudioController({ onTimeUpdate, onStateChange, onRegenerate, tot
           setCurrentTime(time);
           onTimeUpdate(time);
         }
-      }, 100);
-      return () => clearInterval(interval);
+      }, 50);
     } else {
       Tone.getTransport().pause();
     }
+    return () => clearInterval(interval);
   }, [isPlaying, totalDuration, onTimeUpdate]);
 
   const handleStop = () => {
@@ -78,9 +75,16 @@ export function AudioController({ onTimeUpdate, onStateChange, onRegenerate, tot
     onStateChange(nextPlaying);
   };
 
+  const toggleStep = (stem: string, index: number) => {
+    setActiveSteps(prev => ({
+      ...prev,
+      [stem]: prev[stem].map((v, i) => i === index ? !v : v)
+    }));
+  };
+
   return (
-    <div className="relative z-20 bg-[#0C0B0E] border-t-2 border-white/5 pb-8">
-      {/* Master Progress Bar */}
+    <div className="relative z-20 bg-[#0C0B0E] border-t-2 border-white/5 pb-8 transition-colors duration-1000">
+      {/* Master Timecode Bar */}
       <div className="h-[3px] w-full bg-white/5 relative overflow-hidden">
         <div 
           className="absolute h-full wavie-gradient transition-all duration-100" 
@@ -89,11 +93,11 @@ export function AudioController({ onTimeUpdate, onStateChange, onRegenerate, tot
       </div>
 
       <div className="max-w-[1600px] mx-auto flex items-center gap-12 px-10 pt-10">
-        {/* Master Control Knob */}
+        {/* Master Control Unit */}
         <div className="relative group cursor-pointer shrink-0" onClick={togglePlay}>
           <div className={cn(
             "w-32 h-32 rounded-full bg-[#1A181F] border-[8px] border-[#2A272E] flex items-center justify-center shadow-2xl transition-all duration-700 relative",
-            isPlaying ? "border-primary/40 shadow-[0_0_50px_rgba(255,128,0,0.15)]" : ""
+            isPlaying ? "border-primary/40 shadow-[0_0_60px_rgba(255,128,0,0.2)]" : "grayscale opacity-80"
           )}>
             <div className="w-20 h-20 rounded-full bg-[#111014] flex items-center justify-center border border-white/5">
               {isPlaying ? <Pause className="text-white w-8 h-8" /> : <Play className="text-white w-8 h-8 ml-1 fill-current" />}
@@ -112,47 +116,50 @@ export function AudioController({ onTimeUpdate, onStateChange, onRegenerate, tot
               isPlaying ? "rotate-[180deg]" : "rotate-0"
             )} />
           </div>
-          <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-black text-white/40 tracking-widest">MASTER_GAIN</div>
+          <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-black text-white/30 tracking-widest uppercase">Master_Gain</div>
         </div>
 
-        {/* Stem Sequencer Grid */}
+        {/* Multi-Track Sequencer */}
         <div className="flex-1 flex flex-col gap-2">
           {STEMS.map((stemId) => {
             const config = STEM_CONFIG[stemId];
             const Icon = config.icon;
             const steps = activeSteps[stemId] || [];
             return (
-              <div key={stemId} className="flex items-center gap-6 h-7 group">
-                <div className="w-24 text-[9px] font-black tracking-[0.2em] text-white/20 flex items-center gap-3 transition-colors group-hover:text-white/60">
+              <div key={stemId} className="flex items-center gap-6 h-8 group">
+                <div className="w-24 text-[9px] font-black tracking-[0.2em] text-white/30 flex items-center gap-3 transition-colors group-hover:text-white/70">
                   <Icon className="w-3 h-3 text-white/20 group-hover:text-primary transition-colors" />
                   {config.label}
                 </div>
-                <div className="flex-1 h-full sequencer-grid rounded-sm flex items-center px-2 gap-1.5 border border-white/5 bg-black/20">
+                <div className="flex-1 h-full sequencer-grid rounded-sm flex items-center px-2 gap-1.5 border border-white/5 bg-black/40">
                   {steps.map((isTriggered, i) => {
-                    const isPassed = (i / 32) < (currentTime / totalDuration);
+                    const progress = i / 32;
+                    const isPassed = progress < (currentTime / totalDuration);
                     return (
                       <div 
                         key={i}
                         onClick={() => toggleStep(stemId, i)}
                         className={cn(
-                          "h-[70%] w-full rounded-[2px] transition-all duration-300 cursor-pointer hover:brightness-150",
-                          isTriggered ? "shadow-[0_0_10px_rgba(255,128,0,0.2)]" : "bg-white/[0.03]"
+                          "h-[75%] w-full rounded-[1px] transition-all duration-300 cursor-pointer hover:brightness-150",
+                          isTriggered ? "shadow-[0_0_10px_rgba(255,128,0,0.1)]" : "bg-white/[0.02]"
                         )}
                         style={{ 
-                          backgroundColor: isTriggered ? (isPassed && isPlaying ? config.color : 'rgba(255,255,255,0.15)') : 'transparent',
-                          opacity: isPassed ? 1 : 0.3,
+                          backgroundColor: isTriggered ? (isPassed && isPlaying ? config.color : 'rgba(255,255,255,0.2)') : 'transparent',
+                          opacity: isPassed ? 1 : 0.4,
+                          transform: isTriggered && isPassed && isPlaying ? 'scaleY(1.2)' : 'scaleY(1)'
                         }}
                       />
                     );
                   })}
                 </div>
-                <div className="w-12 h-2 bg-white/5 rounded-full overflow-hidden flex gap-0.5 p-0.5">
-                  {[...Array(4)].map((_, i) => (
+                {/* VU Meter Emulation */}
+                <div className="w-16 h-1.5 bg-white/5 rounded-full overflow-hidden flex gap-0.5 p-0.5">
+                  {[...Array(6)].map((_, i) => (
                     <div 
                       key={i} 
                       className={cn(
-                        "flex-1 rounded-sm transition-all duration-200",
-                        isPlaying ? (i < 3 ? "bg-secondary" : "bg-primary") : "bg-white/10"
+                        "flex-1 rounded-[1px] transition-all duration-300",
+                        isPlaying && isTriggeredAt(currentTime, totalDuration, i) ? (i > 4 ? "bg-primary" : "bg-secondary") : "bg-white/5"
                       )} 
                     />
                   ))}
@@ -162,28 +169,34 @@ export function AudioController({ onTimeUpdate, onStateChange, onRegenerate, tot
           })}
         </div>
 
-        {/* Global Controls */}
-        <div className="w-48 grid grid-cols-2 gap-4">
-          <div className="bg-[#1A181F] p-4 rounded-md border border-white/5 flex flex-col gap-2 cursor-pointer hover:bg-[#25222b]">
-            <span className="text-[8px] font-black text-white/20 uppercase">REVERB</span>
+        {/* Secondary Console Modules */}
+        <div className="w-56 grid grid-cols-2 gap-4">
+          <div className="bg-[#1A181F] p-4 rounded-md border border-white/5 flex flex-col gap-2 cursor-pointer hover:border-secondary/20 transition-all">
+            <span className="text-[8px] font-black text-white/30 uppercase tracking-widest">DRY_WET</span>
             <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-              <div className="h-full w-[60%] bg-secondary/60" />
+              <div className="h-full w-[65%] bg-secondary/80" />
             </div>
           </div>
-          <div className="bg-[#1A181F] p-4 rounded-md border border-white/5 flex flex-col gap-2 cursor-pointer hover:bg-[#25222b]">
-            <span className="text-[8px] font-black text-white/20 uppercase">DELAY</span>
+          <div className="bg-[#1A181F] p-4 rounded-md border border-white/5 flex flex-col gap-2 cursor-pointer hover:border-primary/20 transition-all">
+            <span className="text-[8px] font-black text-white/30 uppercase tracking-widest">LITR_PROC</span>
             <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-              <div className="h-full w-[30%] bg-primary/60" />
+              <div className="h-full w-[40%] bg-primary/80" />
             </div>
           </div>
           <button 
             onClick={onRegenerate}
-            className="col-span-2 bg-primary/5 p-3 rounded-md border border-primary/20 text-center hover:bg-primary/10 active:scale-95 transition-all"
+            className="col-span-2 bg-primary/10 p-3 rounded-md border border-primary/30 text-center hover:bg-primary/20 active:scale-95 transition-all group"
           >
-            <span className="text-[8px] font-black text-primary uppercase tracking-[0.3em]">RE_GENERATE_SCENE</span>
+            <span className="text-[8px] font-black text-primary uppercase tracking-[0.4em] group-hover:glow-orange transition-all">SYNC_REGEN_SCENE</span>
           </button>
         </div>
       </div>
     </div>
   );
+}
+
+function isTriggeredAt(time: number, duration: number, index: number) {
+  // Simple deterministic simulation for the VU meter
+  const phase = (time / duration) * 32;
+  return Math.abs(Math.sin(phase + index)) > 0.5;
 }

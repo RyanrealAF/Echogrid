@@ -1,3 +1,6 @@
+/**
+ * @fileOverview Source of truth for song timing, lyrics, and deterministic waveform data.
+ */
 
 export interface Word {
   word: string;
@@ -80,18 +83,18 @@ export const SONG_METADATA: SongMetadata = {
           words: [
             { word: "Cold", start: 10.10 },
             { word: "rain", start: 10.25 },
-            { word: "fall", "start": 10.40 },
-            { word: "on", "start": 10.55 },
-            { word: "the", "start": 10.65 },
-            { word: "avenue", "start": 10.80 },
-            { word: "lines...", "start": 11.00 },
-            { word: "Still", "start": 11.50 },
-            { word: "you", "start": 11.65 },
-            { word: "put", "start": 11.80 },
-            { word: "your", "start": 11.95 },
-            { word: "hand", "start": 12.10 },
-            { word: "in", "start": 12.25 },
-            { word: "mine...", "start": 12.40 }
+            { word: "fall", start: 10.40 },
+            { word: "on", start: 10.55 },
+            { word: "the", start: 10.65 },
+            { word: "avenue", start: 10.80 },
+            { word: "lines...", start: 11.00 },
+            { word: "Still", start: 11.50 },
+            { word: "you", start: 11.65 },
+            { word: "put", start: 11.80 },
+            { word: "your", start: 11.95 },
+            { word: "hand", start: 12.10 },
+            { word: "in", start: 12.25 },
+            { word: "mine...", start: 12.40 }
           ]
         }
       ]
@@ -99,26 +102,25 @@ export const SONG_METADATA: SongMetadata = {
   ]
 };
 
-export const BEAT_GRID = {
-  bpm: 92,
-  beats: Array.from({ length: 200 }, (_, i) => i * (60 / 92))
-};
-
 export const STEMS = ["vocals", "drums", "bass", "melody", "harmonies", "fx"] as const;
 export type StemType = typeof STEMS[number];
 
-const generateDeterministicWaveform = (seed: number, length: number, min: number, max: number) => {
+/**
+ * Generates a deterministic array of values between 0.1 and 1.0.
+ * Pure function to ensure hydration consistency.
+ */
+const generateDeterministicWaveform = (seed: number, length: number) => {
   return Array.from({ length }, (_, i) => {
-    const val = Math.abs(Math.sin(seed * 10 + i * 0.8));
-    return Number((val * (max - min) + min).toFixed(2));
+    const val = Math.abs(Math.sin(seed * 1.5 + i * 0.72));
+    return Number((val * 0.85 + 0.15).toFixed(2));
   });
 };
 
 export const WAVEFORM_DATA: Record<StemType, number[]> = {
-  drums: generateDeterministicWaveform(1, 30, 0.2, 1.0),
-  bass: generateDeterministicWaveform(2, 30, 0.4, 1.0),
-  vocals: generateDeterministicWaveform(3, 30, 0.3, 1.0),
-  melody: generateDeterministicWaveform(4, 30, 0.5, 1.0),
-  harmonies: generateDeterministicWaveform(5, 30, 0.6, 1.0),
-  fx: generateDeterministicWaveform(6, 30, 0.7, 1.0),
+  drums: generateDeterministicWaveform(101, 32),
+  bass: generateDeterministicWaveform(202, 32),
+  vocals: generateDeterministicWaveform(303, 32),
+  melody: generateDeterministicWaveform(404, 32),
+  harmonies: generateDeterministicWaveform(505, 32),
+  fx: generateDeterministicWaveform(606, 32),
 };
