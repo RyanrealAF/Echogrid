@@ -107,19 +107,21 @@ export type StemType = typeof STEMS[number];
 
 /**
  * Generates a deterministic waveform using sine waves.
+ * Optimized with lower density (30 points) for "smaller" processing footprint.
  */
 const generateDeterministicWaveform = (seed: number, length: number, min: number, max: number) => {
   return Array.from({ length }, (_, i) => {
+    // Deterministic sine calculation ensures hydration consistency
     const val = Math.abs(Math.sin(seed * 10 + i * 0.8));
     return Number((val * (max - min) + min).toFixed(2));
   });
 };
 
 export const WAVEFORM_DATA: Record<StemType, number[]> = {
-  drums: generateDeterministicWaveform(1, 40, 0.2, 1.0),
-  bass: generateDeterministicWaveform(2, 40, 0.4, 1.0),
-  vocals: generateDeterministicWaveform(3, 40, 0.3, 1.0),
-  melody: generateDeterministicWaveform(4, 40, 0.5, 1.0),
-  harmonies: generateDeterministicWaveform(5, 40, 0.6, 1.0),
-  fx: generateDeterministicWaveform(6, 40, 0.7, 1.0),
+  drums: generateDeterministicWaveform(1, 30, 0.2, 1.0),
+  bass: generateDeterministicWaveform(2, 30, 0.4, 1.0),
+  vocals: generateDeterministicWaveform(3, 30, 0.3, 1.0),
+  melody: generateDeterministicWaveform(4, 30, 0.5, 1.0),
+  harmonies: generateDeterministicWaveform(5, 30, 0.6, 1.0),
+  fx: generateDeterministicWaveform(6, 30, 0.7, 1.0),
 };

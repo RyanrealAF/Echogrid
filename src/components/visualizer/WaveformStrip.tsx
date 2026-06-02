@@ -39,11 +39,12 @@ export function WaveformStrip({ stem, isActive, isPlaying }: WaveformStripProps)
       </div>
       <div className="h-16 w-full flex items-center gap-0.5 overflow-hidden">
         {data.map((val, i) => {
-          // Opacity is kept strictly deterministic for the initial render.
-          // Random pulsing only starts after the component has fully mounted on the client.
-          const currentOpacity = isActive 
-            ? (isPlaying && mounted ? 0.4 + (Math.random() * 0.6) : 0.8) 
-            : 0.3;
+          // Use static values for the first render to match server (hydration safety)
+          const initialOpacity = isActive ? 0.8 : 0.3;
+          // After mounting, we can introduce dynamic visuals if playing
+          const currentOpacity = mounted && isPlaying && isActive
+            ? 0.4 + (Math.sin(Date.now() / 1000 + i) * 0.2 + 0.4) // Deterministic-ish pulse
+            : initialOpacity;
 
           return (
             <div 
@@ -54,7 +55,7 @@ export function WaveformStrip({ stem, isActive, isPlaying }: WaveformStripProps)
               )}
               style={{ 
                 height: `${(val * 100).toFixed(2)}%`,
-                opacity: currentOpacity.toString()
+                opacity: currentOpacity
               }}
             />
           );
