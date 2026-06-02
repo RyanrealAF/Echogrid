@@ -1,11 +1,12 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Maximize2, Repeat, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Badge } from '@/components/ui/badge';
 import { SONG_METADATA } from '@/lib/song-data';
+import { cn } from '@/lib/utils';
 
 interface AudioControllerProps {
   onTimeUpdate: (time: number) => void;
@@ -71,10 +72,11 @@ export function AudioController({ onTimeUpdate, onStateChange, totalDuration }: 
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 p-6 glass-morphism z-50 border-t border-white/5">
-      <div className="max-w-screen-xl mx-auto flex flex-col gap-4">
-        <div className="flex items-center gap-4">
-          <span className="text-xs font-mono text-muted-foreground w-10">{formatTime(currentTime)}</span>
+    <div className="fixed bottom-0 left-0 right-0 p-8 glass-morphism z-50 border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
+      <div className="max-w-screen-xl mx-auto flex flex-col gap-6">
+        {/* Progress Bar */}
+        <div className="flex items-center gap-6">
+          <span className="text-[10px] font-mono text-primary font-bold w-12">{formatTime(currentTime)}</span>
           <Slider 
             value={[currentTime]} 
             max={totalDuration} 
@@ -82,41 +84,63 @@ export function AudioController({ onTimeUpdate, onStateChange, totalDuration }: 
             onValueChange={handleSeek}
             className="flex-1 cursor-pointer"
           />
-          <span className="text-xs font-mono text-muted-foreground w-10">{formatTime(totalDuration)}</span>
+          <span className="text-[10px] font-mono text-muted-foreground w-12 text-right">{formatTime(totalDuration)}</span>
         </div>
 
+        {/* Controls Grid */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          {/* Track Info */}
+          <div className="flex items-center gap-4 group cursor-default">
+            <div className="w-12 h-12 bg-primary/20 rounded flex items-center justify-center border border-primary/30 group-hover:border-primary/60 transition-colors">
+              <Music className="w-6 h-6 text-primary glow-text" />
+            </div>
             <div className="flex flex-col">
-              <span className="text-sm font-headline uppercase tracking-widest text-primary">{SONG_METADATA.title}</span>
-              <span className="text-[10px] uppercase tracking-tighter text-muted-foreground">Original Production - Grime Era</span>
+              <span className="text-sm font-headline font-black uppercase tracking-widest text-white">{SONG_METADATA.title}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] uppercase tracking-tighter text-muted-foreground">Original Studio Master</span>
+                <Badge variant="outline" className="h-4 text-[8px] bg-white/5 border-white/10 text-white/40">24-BIT</Badge>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white transition-colors">
+          {/* Main Controls */}
+          <div className="flex items-center gap-8">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white transition-all hover:scale-110 active:scale-90">
               <SkipBack className="w-5 h-5" />
             </Button>
             <Button 
               onClick={togglePlay} 
               size="icon" 
-              className="w-12 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 scale-100 hover:scale-110 active:scale-95 transition-all"
+              className={cn(
+                "w-14 h-14 rounded-full shadow-2xl transition-all duration-300 transform",
+                isPlaying 
+                  ? "bg-white text-black hover:bg-white/90 scale-100" 
+                  : "bg-primary text-white hover:bg-primary/90 scale-110 hover:shadow-[0_0_30px_hsl(var(--primary)/0.4)]"
+              )}
             >
-              {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 ml-1 fill-current" />}
+              {isPlaying ? <Pause className="w-7 h-7 fill-current" /> : <Play className="w-7 h-7 ml-1 fill-current" />}
             </Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white transition-colors">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white transition-all hover:scale-110 active:scale-90">
               <SkipForward className="w-5 h-5" />
             </Button>
           </div>
 
-          <div className="flex items-center gap-3 w-40 justify-end">
-            <Volume2 className="w-4 h-4 text-muted-foreground" />
-            <Slider 
-              value={[volume]} 
-              max={100} 
-              onValueChange={(v) => setVolume(v[0])}
-              className="w-24"
-            />
+          {/* Utility Controls */}
+          <div className="flex items-center gap-6 w-56 justify-end">
+            <div className="flex items-center gap-3">
+              <Repeat className="w-4 h-4 text-white/20 hover:text-white cursor-pointer transition-colors" />
+              <Maximize2 className="w-4 h-4 text-white/20 hover:text-white cursor-pointer transition-colors" />
+            </div>
+            <div className="h-8 w-px bg-white/10" />
+            <div className="flex items-center gap-3">
+              <Volume2 className="w-4 h-4 text-muted-foreground" />
+              <Slider 
+                value={[volume]} 
+                max={100} 
+                onValueChange={(v) => setVolume(v[0])}
+                className="w-24"
+              />
+            </div>
           </div>
         </div>
       </div>
