@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { WAVEFORM_DATA, StemType } from '@/lib/song-data';
 import { cn } from '@/lib/utils';
 
@@ -12,6 +12,14 @@ interface WaveformStripProps {
 }
 
 export function WaveformStrip({ stem, isActive, isPlaying }: WaveformStripProps) {
+  const [mounted, setMounted] = useState(false);
+  
+  // To avoid hydration mismatches, any code using Math.random() 
+  // or browser-specific values must be deferred until after mount.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const data = WAVEFORM_DATA[stem];
   
   return (
@@ -32,19 +40,27 @@ export function WaveformStrip({ stem, isActive, isPlaying }: WaveformStripProps)
         )}
       </div>
       <div className="h-16 w-full flex items-center gap-0.5 overflow-hidden">
-        {data.map((val, i) => (
-          <div 
-            key={i}
-            className={cn(
-              "flex-1 min-w-[2px] transition-all duration-300",
-              isActive ? "bg-primary" : "bg-muted-foreground/30"
-            )}
-            style={{ 
-              height: `${val * 100}%`,
-              opacity: isActive ? (isPlaying ? 0.4 + (Math.random() * 0.6) : 0.8) : 0.3
-            }}
-          />
-        ))}
+        {data.map((val, i) => {
+          // Pulse the opacity only when playing and after the component has mounted
+          // to ensure SSR output matches the initial client render.
+          const currentOpacity = isActive 
+            ? (isPlaying && mounted ? 0.4 + (Math.random() * 0.6) : 0.8) 
+            : 0.3;
+
+          return (
+            <div 
+              key={i}
+              className={cn(
+                "flex-1 min-w-[2px] transition-all duration-300",
+                isActive ? "bg-primary" : "bg-muted-foreground/30"
+              )}
+              style={{ 
+                height: `${val * 100}%`,
+                opacity: currentOpacity
+              }}
+            />
+          );
+        })}
       </div>
     </div>
   );
