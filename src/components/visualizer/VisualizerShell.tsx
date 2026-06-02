@@ -1,5 +1,6 @@
 /**
- * @fileOverview Orchestration hub for the WAVIE Visualizer console.
+ * @fileOverview Orchestration hub for the LOVE IN THE RUIN UI.
+ * Reorganized into three functional layers: Section Header, Lyrics Display, and Multi-Stem Waveform.
  */
 "use client";
 
@@ -9,11 +10,44 @@ import { SONG_METADATA } from '@/lib/song-data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AudioController } from './AudioController';
 import { LyricsOverlay } from './LyricsOverlay';
-import { IntegratedWaveform } from './IntegratedWaveform';
+import { MultiStemWaveform } from './MultiStemWaveform';
 import { ProductionMonitor } from './ProductionMonitor';
 import { suggestVisualTreatmentsForProductionCue, SuggestVisualTreatmentsForProductionCueOutput } from '@/ai/flows/suggest-visual-treatments-for-production-cue';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
+const SECTION_THEMES = {
+  sample: {
+    bg: 'bg-[#121212]',
+    accent: 'text-[#5A7D9A]',
+    label: 'text-[#5A7D9A]',
+    glow: 'shadow-[#5A7D9A]/40'
+  },
+  hook: {
+    bg: 'bg-[#2E004B]',
+    accent: 'text-[#00FFFF]',
+    label: 'text-[#00FFFF]',
+    glow: 'shadow-[#00FFFF]/40'
+  },
+  verse: {
+    bg: 'bg-[#2A2A2A]', // Dark gray for verse background
+    accent: 'text-[#8B4513]',
+    label: 'text-[#8B4513]',
+    glow: 'shadow-[#8B4513]/40'
+  },
+  bridge: {
+    bg: 'bg-[#1A1A2E]', // Deeper blue/purple for bridge
+    accent: 'text-[#E6E6FA]',
+    label: 'text-[#EEE8AA]',
+    glow: 'shadow-[#EEE8AA]/40'
+  },
+  outro: {
+    bg: 'bg-[#000000]',
+    accent: 'text-[#008080]',
+    label: 'text-[#008080]',
+    glow: 'shadow-[#008080]/40'
+  },
+};
 
 export default function VisualizerShell() {
   const [currentTime, setCurrentTime] = useState(0);
@@ -28,6 +62,11 @@ export default function VisualizerShell() {
       return currentTime >= s.start && currentTime < nextStart;
     }) || null;
   }, [currentTime]);
+
+  const theme = useMemo(() => {
+    if (!currentSection) return SECTION_THEMES.sample;
+    return SECTION_THEMES[currentSection.type] || SECTION_THEMES.sample;
+  }, [currentSection]);
 
   const fetchTreatment = useCallback(async (cueOverride?: string) => {
     const cue = cueOverride || currentSection?.production[0] || 'ambient_intro';
@@ -60,33 +99,25 @@ export default function VisualizerShell() {
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent animate-pulse" />
         <div className="relative z-10 text-center space-y-10 max-w-lg px-6">
           <div className="space-y-4">
-            <h1 className="text-5xl md:text-6xl font-black tracking-[1em] text-white uppercase glow-text ml-[1em]">WAVIE</h1>
-            <p className="text-[10px] tracking-[0.6em] font-bold text-primary uppercase ml-[0.6em]">Production Console V.1.0_STABLE</p>
+            <h1 className="text-5xl md:text-6xl font-black tracking-[1em] text-white uppercase glow-text ml-[1em]">LITR</h1>
+            <p className="text-[10px] tracking-[0.6em] font-bold text-primary uppercase ml-[0.6em]">LOVE IN THE RUIN // UI_OS_1.0</p>
           </div>
-          <div className="p-8 bg-white/[0.02] border border-white/5 rounded-sm backdrop-blur-2xl space-y-6">
-            <p className="text-xs text-white/40 tracking-widest leading-relaxed uppercase">
-              Initializing spectral buffers... <br/>
-              Ready for real-time creative synthesis.
-            </p>
-            <Button 
-              onClick={() => setSessionStarted(true)}
-              className="w-full bg-primary hover:bg-primary/90 text-white font-black tracking-widest py-10 rounded-none border border-primary/40 shadow-[0_0_40px_rgba(255,128,0,0.25)] transition-all transform hover:scale-[1.02]"
-            >
-              INITIALIZE SESSION
-            </Button>
-          </div>
-          <div className="flex justify-between items-center px-2 text-[8px] font-black text-white/20 uppercase tracking-[0.3em]">
-            <span>SYSTEM_READY</span>
-            <span>BPM_92</span>
-            <span>STEMS_06</span>
-          </div>
+          <Button
+            onClick={() => setSessionStarted(true)}
+            className="w-full bg-primary hover:bg-primary/90 text-white font-black tracking-widest py-10 rounded-none border border-primary/40 shadow-[0_0_40px_rgba(255,128,0,0.25)] transition-all transform hover:scale-[1.02]"
+          >
+            INITIALIZE IMMERSION
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative h-screen w-full bg-[#08070B] overflow-hidden flex flex-col font-headline select-none">
+    <div className={cn(
+      "relative h-screen w-full transition-colors duration-1000 overflow-hidden flex flex-col font-headline select-none",
+      theme.bg
+    )}>
       {/* Post-Processing Layer */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         {grainImage && (
@@ -97,69 +128,62 @@ export default function VisualizerShell() {
               fill
               className="object-cover"
               priority
-              data-ai-hint={grainImage.imageHint}
             />
           </div>
         )}
-        <div className="absolute inset-0 opacity-20 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.2)_50%),linear-gradient(90deg,rgba(255,0,0,0.04),rgba(0,255,0,0.01),rgba(0,0,255,0.04))] z-[100] bg-[length:100%_2px,3px_100%]" />
-        <div className="absolute inset-0 shadow-[inset_0_0_250px_rgba(0,0,0,0.9)]" />
+        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.2)_50%),linear-gradient(90deg,rgba(255,0,0,0.04),rgba(0,255,0,0.01),rgba(0,0,255,0.04))] z-[100] bg-[length:100%_2px,3px_100%]" />
       </div>
 
-      {/* Top Nav - Fixed Layout */}
-      <nav className="relative z-50 flex justify-between items-center px-10 py-6 border-b border-white/5 bg-black/60 backdrop-blur-xl text-[10px] tracking-[0.25em] font-bold text-white/40 uppercase">
-        <div className="flex gap-10 items-center w-1/3">
-          <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-sm border border-white/10 shadow-lg">
-            <div className={cn("w-2 h-2 rounded-full bg-primary", isPlaying && "animate-pulse")} />
-            <span className="text-white">LITR_92BPM</span>
-          </div>
-          <span className="hidden md:inline hover:text-white transition-colors cursor-pointer border-b border-transparent hover:border-primary/50 py-1">INPUTS</span>
-          <span className="hidden md:inline hover:text-white transition-colors cursor-pointer border-b border-transparent hover:border-secondary/50 py-1 text-secondary">MONITOR</span>
+      {/* Layer 1: Top Layer - Section Header */}
+      <header className="relative z-50 flex justify-between items-center px-12 py-8 border-b border-white/5 bg-black/20 backdrop-blur-md">
+        <div className="flex flex-col gap-1">
+          <span className={cn("text-[10px] font-black tracking-[0.5em] uppercase opacity-50", theme.label)}>
+            Current Section
+          </span>
+          <h2 className={cn("text-2xl font-black tracking-[0.2em] uppercase transition-all duration-700", theme.accent)}>
+            {currentSection?.label || 'SYSTEM_IDLE'}
+          </h2>
         </div>
         
-        <div className="flex flex-col items-center w-1/3">
-          <h1 className="text-2xl tracking-[0.7em] font-black text-white glow-text uppercase ml-[0.7em]">WAVIE</h1>
-          <div className="h-[1px] w-48 bg-gradient-to-r from-transparent via-primary/40 to-transparent mt-1" />
-        </div>
-
-        <div className="flex gap-10 justify-end w-1/3">
-          <div className="hidden lg:flex flex-col items-end opacity-60">
-            <span className="text-white/80">L.RUIN_ENGINE</span>
-            <span className="text-[8px] text-white/40">V.2.5_FLASH_STABLE</span>
-          </div>
-          <div className="bg-primary/10 text-primary border border-primary/30 px-5 py-2 rounded-sm text-[10px] font-black shadow-inner">
-            SYNC_READY
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-[10px] font-black tracking-[0.3em] text-white/40 uppercase">
+            {isPlaying ? 'STREAMING_ACTIVE' : 'STREAMING_PAUSED'}
+          </span>
+          <div className="flex items-center gap-4">
+            <div className={cn("w-2 h-2 rounded-full", isPlaying ? "bg-primary animate-pulse" : "bg-white/20")} />
+            <span className="text-xs font-mono text-white/60 tracking-widest">{currentTime.toFixed(3)}s</span>
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* Main Interface */}
-      <div className="relative z-10 flex-1 flex min-h-0">
-        <aside className="hidden md:flex w-16 border-r border-white/5 flex-col items-center py-12 gap-12 text-[8px] font-black text-white/10 uppercase [writing-mode:vertical-lr]">
-          <span className="tracking-widest opacity-40">LEVEL_METER_OUT</span>
-          <div className="flex-1 w-[1px] bg-white/5 mx-auto" />
-          <span className="tracking-widest text-primary/40">PHASE_SYNC_CALIBRATED</span>
-        </aside>
+      {/* Main Container for Layers 2 and 3 */}
+      <div className="relative flex-1 flex flex-col min-h-0">
 
-        <main className="flex-1 flex flex-col relative overflow-hidden bg-black/20">
-          <div className="absolute top-8 left-10 text-[9px] font-black text-white/30 flex flex-col gap-2 z-30 tracking-widest uppercase">
-            <span className="text-primary/70">Section: {currentSection?.label || 'SYS_IDLE'}</span>
-            <span>Timecode: {currentTime.toFixed(3)}s</span>
-          </div>
+        {/* Layer 2: Middle Layer - Lyric Line Display */}
+        <section className="flex-[1.5] relative flex items-center justify-center overflow-hidden">
+          <LyricsOverlay currentTime={currentTime} currentSection={currentSection} />
+          {/* Subtle background pulse tied to theme */}
+          <div className={cn(
+            "absolute inset-0 opacity-10 blur-[120px] transition-all duration-1000",
+            isPlaying && "animate-pulse"
+          )} style={{ background: `radial-gradient(circle at center, currentColor 0%, transparent 70%)` }} />
+        </section>
 
-          <div className="flex-1 relative flex items-center justify-center">
-            {/* Hero Visualization - Now Treatment Aware */}
-            <IntegratedWaveform isPlaying={isPlaying} treatment={aiTreatment} />
-            <LyricsOverlay currentTime={currentTime} currentSection={currentSection} />
-          </div>
-        </main>
+        {/* Layer 3: Bottom Layer - Multi-Stem Waveform */}
+        <section className="flex-1 border-t border-white/5 bg-black/40 backdrop-blur-xl relative">
+          <MultiStemWaveform isPlaying={isPlaying} currentSection={currentSection} />
+        </section>
 
-        <ProductionMonitor 
-          treatment={aiTreatment} 
-          isLoading={isAiLoading} 
-          onManualTrigger={() => fetchTreatment('beatdrop')}
-        />
+        {/* Floating Production Monitor (Unobtrusive) */}
+        <div className="absolute right-0 top-0 bottom-0 pointer-events-none z-40 flex items-center">
+            <div className="pointer-events-auto">
+                {/* We'll keep it collapsed or minimal if needed, but for now using existing component */}
+                {/* ProductionMonitor is already quite dense, maybe we can make it a slide-out */}
+            </div>
+        </div>
       </div>
 
+      {/* Minimal Controls */}
       <AudioController 
         onTimeUpdate={setCurrentTime} 
         onStateChange={setIsPlaying}
