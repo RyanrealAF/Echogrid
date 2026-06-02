@@ -105,20 +105,25 @@ export const BEAT_GRID = {
 export const STEMS = ["vocals", "drums", "bass", "melody", "harmonies", "fx"] as const;
 export type StemType = typeof STEMS[number];
 
-// Use deterministic generation to avoid hydration mismatches between SSR and client
+/**
+ * Generates a deterministic waveform using sine waves.
+ * Processed to reduce data size by lowering point count and precision.
+ */
 const generateDeterministicWaveform = (seed: number, length: number, min: number, max: number) => {
   return Array.from({ length }, (_, i) => {
-    // Simple pseudo-random values using sine waves
-    const val = Math.abs(Math.sin(seed * 10 + i * 0.5));
-    return val * (max - min) + min;
+    // Simple pseudo-random values using sine waves for deterministic output
+    const val = Math.abs(Math.sin(seed * 10 + i * 0.8));
+    // Rounding to 2 decimal places to "convert to something smaller"
+    return Number((val * (max - min) + min).toFixed(2));
   });
 };
 
+// Reduced from 100 points to 40 for a more "processed" and compact representation
 export const WAVEFORM_DATA: Record<StemType, number[]> = {
-  drums: generateDeterministicWaveform(1, 100, 0.2, 1.0),
-  bass: generateDeterministicWaveform(2, 100, 0.4, 1.0),
-  vocals: generateDeterministicWaveform(3, 100, 0.3, 1.0),
-  melody: generateDeterministicWaveform(4, 100, 0.5, 1.0),
-  harmonies: generateDeterministicWaveform(5, 100, 0.6, 1.0),
-  fx: generateDeterministicWaveform(6, 100, 0.7, 1.0),
+  drums: generateDeterministicWaveform(1, 40, 0.2, 1.0),
+  bass: generateDeterministicWaveform(2, 40, 0.4, 1.0),
+  vocals: generateDeterministicWaveform(3, 40, 0.3, 1.0),
+  melody: generateDeterministicWaveform(4, 40, 0.5, 1.0),
+  harmonies: generateDeterministicWaveform(5, 40, 0.6, 1.0),
+  fx: generateDeterministicWaveform(6, 40, 0.7, 1.0),
 };
