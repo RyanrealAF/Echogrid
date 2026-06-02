@@ -17,7 +17,7 @@ export function AudioController({ onTimeUpdate, onStateChange, totalDuration }: 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(80);
-  const requestRef = useRef<number>();
+  const requestRef = useRef<number>(undefined);
   const startTimeRef = useRef<number>(0);
 
   const animate = useCallback((time: number) => {

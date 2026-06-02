@@ -23,12 +23,14 @@ export interface SongSection {
 export interface SongMetadata {
   title: string;
   bpm: number;
+  duration: number;
   sections: SongSection[];
 }
 
 export const SONG_METADATA: SongMetadata = {
   title: "LOVE IN THE RUIN",
   bpm: 92,
+  duration: 24,
   sections: [
     {
       id: "intro_sample",
@@ -105,13 +107,8 @@ export const BEAT_GRID = {
 export const STEMS = ["vocals", "drums", "bass", "melody", "harmonies", "fx"] as const;
 export type StemType = typeof STEMS[number];
 
-/**
- * Generates a deterministic waveform using sine waves.
- * Optimized with lower density (30 points) for "smaller" processing footprint.
- */
 const generateDeterministicWaveform = (seed: number, length: number, min: number, max: number) => {
   return Array.from({ length }, (_, i) => {
-    // Deterministic sine calculation ensures hydration consistency
     const val = Math.abs(Math.sin(seed * 10 + i * 0.8));
     return Number((val * (max - min) + min).toFixed(2));
   });

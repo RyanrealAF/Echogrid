@@ -2,7 +2,9 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { SONG_METADATA, STEMS, SongSection } from '@/lib/song-data';
+import Image from 'next/image';
+import { SONG_METADATA, STEMS } from '@/lib/song-data';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AudioController } from './AudioController';
 import { WaveformStrip } from './WaveformStrip';
 import { LyricsOverlay } from './LyricsOverlay';
@@ -21,7 +23,8 @@ export default function VisualizerShell() {
     }) || null;
   }, [currentTime]);
 
-  // Handle AI Visual Enhancements when section changes
+  const grainImage = useMemo(() => PlaceHolderImages.find(img => img.id === 'grain-texture'), []);
+
   useEffect(() => {
     if (currentSection && currentSection.production.length > 0) {
       const cue = currentSection.production[0];
@@ -37,7 +40,6 @@ export default function VisualizerShell() {
 
   return (
     <div className="relative h-screen w-full bg-background overflow-hidden flex flex-col">
-      {/* Dynamic Background Effects */}
       <div className="absolute inset-0 z-0">
         <div 
           className={cn(
@@ -45,10 +47,20 @@ export default function VisualizerShell() {
             currentSection?.type === 'hook' ? "bg-primary/5" : "bg-transparent"
           )} 
         />
-        {/* Cinematic Grime Grain Overlay */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://picsum.photos/seed/grain/1920/1080')] bg-repeat mix-blend-overlay" />
         
-        {/* AI Suggested Background Color Pulsing */}
+        {grainImage && (
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay">
+            <Image
+              src={grainImage.imageUrl}
+              alt={grainImage.description}
+              fill
+              className="object-cover"
+              priority
+              data-ai-hint={grainImage.imageHint}
+            />
+          </div>
+        )}
+        
         {activeTreatment && isPlaying && (
           <div 
             className="absolute inset-0 blur-[150px] opacity-10 transition-colors duration-1000"
@@ -56,15 +68,12 @@ export default function VisualizerShell() {
           />
         )}
 
-        {/* Helicopter oscillation effect simulation */}
         {currentSection?.production.includes('helicopterdistant') && isPlaying && (
           <div className="absolute top-10 left-1/4 w-32 h-32 bg-secondary/10 rounded-full blur-[80px] animate-pulse" />
         )}
       </div>
 
-      {/* Main Content Area */}
       <main className="relative z-10 flex-1 flex flex-col">
-        {/* Top Section Info */}
         <div className="p-8 flex justify-between items-start">
           <div className="flex flex-col gap-1">
             <h1 className="text-sm font-headline uppercase tracking-[0.5em] text-primary glow-text">StemSculpt</h1>
@@ -86,12 +95,10 @@ export default function VisualizerShell() {
           </div>
         </div>
 
-        {/* Center Lyrics */}
         <div className="flex-1">
           <LyricsOverlay currentTime={currentTime} currentSection={currentSection} />
         </div>
 
-        {/* Waveform Visualization Sidebar/Bottom Area */}
         <div className="px-8 pb-32">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 max-w-screen-xl mx-auto">
             {STEMS.map((stem) => (
@@ -106,11 +113,10 @@ export default function VisualizerShell() {
         </div>
       </main>
 
-      {/* Audio Control Panel */}
       <AudioController 
         onTimeUpdate={setCurrentTime} 
         onStateChange={setIsPlaying}
-        totalDuration={20} // Just for the demo prototype
+        totalDuration={SONG_METADATA.duration}
       />
     </div>
   );
