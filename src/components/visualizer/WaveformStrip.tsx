@@ -14,8 +14,6 @@ interface WaveformStripProps {
 export function WaveformStrip({ stem, isActive, isPlaying }: WaveformStripProps) {
   const [mounted, setMounted] = useState(false);
   
-  // To avoid hydration mismatches, any code using Math.random() 
-  // or browser-specific values must be deferred until after mount.
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -31,7 +29,7 @@ export function WaveformStrip({ stem, isActive, isPlaying }: WaveformStripProps)
         )}>
           {stem}
         </span>
-        {isActive && isPlaying && (
+        {isActive && isPlaying && mounted && (
           <div className="flex gap-0.5 items-end h-3">
              <div className="w-0.5 bg-primary animate-pulse h-full" style={{ animationDelay: '0s' }} />
              <div className="w-0.5 bg-primary animate-pulse h-2/3" style={{ animationDelay: '0.1s' }} />
@@ -41,8 +39,8 @@ export function WaveformStrip({ stem, isActive, isPlaying }: WaveformStripProps)
       </div>
       <div className="h-16 w-full flex items-center gap-0.5 overflow-hidden">
         {data.map((val, i) => {
-          // Pulse the opacity only when playing and after the component has mounted
-          // to ensure SSR output matches the initial client render.
+          // Opacity is kept strictly deterministic for the initial render.
+          // Random pulsing only starts after the component has fully mounted on the client.
           const currentOpacity = isActive 
             ? (isPlaying && mounted ? 0.4 + (Math.random() * 0.6) : 0.8) 
             : 0.3;
@@ -55,8 +53,8 @@ export function WaveformStrip({ stem, isActive, isPlaying }: WaveformStripProps)
                 isActive ? "bg-primary" : "bg-muted-foreground/30"
               )}
               style={{ 
-                height: `${val * 100}%`,
-                opacity: currentOpacity
+                height: `${(val * 100).toFixed(2)}%`,
+                opacity: currentOpacity.toString()
               }}
             />
           );
