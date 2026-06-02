@@ -1,11 +1,11 @@
 /**
- * @fileOverview Main orchestration hub for the WAVIE Visualizer console.
+ * @fileOverview Orchestration hub for the WAVIE Visualizer console.
  */
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { SONG_METADATA, SongSection } from '@/lib/song-data';
+import { SONG_METADATA } from '@/lib/song-data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AudioController } from './AudioController';
 import { LyricsOverlay } from './LyricsOverlay';
@@ -36,7 +36,6 @@ export default function VisualizerShell() {
       const result = await suggestVisualTreatmentsForProductionCue({ productionCue: cue });
       setAiTreatment(result);
     } catch (error) {
-      // Fail gracefully with fallback defaults if AI is unavailable
       setAiTreatment({
         textualDescription: "Spectral analysis unavailable. Using default visual synthesis.",
         visualConcepts: ["Standard waveform rendering active.", "Hardware buffers initialized."],
@@ -88,7 +87,7 @@ export default function VisualizerShell() {
 
   return (
     <div className="relative h-screen w-full bg-[#08070B] overflow-hidden flex flex-col font-headline select-none">
-      {/* Immersive Post-Processing Effects */}
+      {/* Post-Processing Layer */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         {grainImage && (
           <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay">
@@ -102,29 +101,28 @@ export default function VisualizerShell() {
             />
           </div>
         )}
-        {/* CRT Scanline and Vignette */}
         <div className="absolute inset-0 opacity-20 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.2)_50%),linear-gradient(90deg,rgba(255,0,0,0.04),rgba(0,255,0,0.01),rgba(0,0,255,0.04))] z-[100] bg-[length:100%_2px,3px_100%]" />
         <div className="absolute inset-0 shadow-[inset_0_0_250px_rgba(0,0,0,0.9)]" />
       </div>
 
-      {/* Top Engineering Nav */}
-      <nav className="relative z-20 flex justify-between items-center px-10 py-6 border-b border-white/5 bg-black/60 backdrop-blur-xl text-[10px] tracking-[0.25em] font-bold text-white/40 uppercase">
-        <div className="flex gap-10 items-center">
+      {/* Top Nav - Fixed Layout */}
+      <nav className="relative z-50 flex justify-between items-center px-10 py-6 border-b border-white/5 bg-black/60 backdrop-blur-xl text-[10px] tracking-[0.25em] font-bold text-white/40 uppercase">
+        <div className="flex gap-10 items-center w-1/3">
           <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-sm border border-white/10 shadow-lg">
             <div className={cn("w-2 h-2 rounded-full bg-primary", isPlaying && "animate-pulse")} />
             <span className="text-white">LITR_92BPM</span>
           </div>
-          <span className="hover:text-white transition-colors cursor-pointer border-b border-transparent hover:border-primary/50 py-1">INPUTS</span>
-          <span className="hover:text-white transition-colors cursor-pointer border-b border-transparent hover:border-secondary/50 py-1 text-secondary">MONITOR</span>
+          <span className="hidden md:inline hover:text-white transition-colors cursor-pointer border-b border-transparent hover:border-primary/50 py-1">INPUTS</span>
+          <span className="hidden md:inline hover:text-white transition-colors cursor-pointer border-b border-transparent hover:border-secondary/50 py-1 text-secondary">MONITOR</span>
         </div>
         
-        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
+        <div className="flex flex-col items-center w-1/3">
           <h1 className="text-2xl tracking-[0.7em] font-black text-white glow-text uppercase ml-[0.7em]">WAVIE</h1>
-          <div className="h-[1px] w-64 bg-gradient-to-r from-transparent via-primary/40 to-transparent mt-2" />
+          <div className="h-[1px] w-48 bg-gradient-to-r from-transparent via-primary/40 to-transparent mt-1" />
         </div>
 
-        <div className="flex gap-10">
-          <div className="flex flex-col items-end opacity-60">
+        <div className="flex gap-10 justify-end w-1/3">
+          <div className="hidden lg:flex flex-col items-end opacity-60">
             <span className="text-white/80">L.RUIN_ENGINE</span>
             <span className="text-[8px] text-white/40">V.2.5_FLASH_STABLE</span>
           </div>
@@ -134,30 +132,27 @@ export default function VisualizerShell() {
         </div>
       </nav>
 
-      {/* Primary Workspace */}
-      <div className="relative z-10 flex-1 flex">
-        {/* Left Status Bar */}
-        <aside className="w-16 border-r border-white/5 flex flex-col items-center py-12 gap-12 text-[8px] font-black text-white/10 uppercase [writing-mode:vertical-lr]">
+      {/* Main Interface */}
+      <div className="relative z-10 flex-1 flex min-h-0">
+        <aside className="hidden md:flex w-16 border-r border-white/5 flex-col items-center py-12 gap-12 text-[8px] font-black text-white/10 uppercase [writing-mode:vertical-lr]">
           <span className="tracking-widest opacity-40">LEVEL_METER_OUT</span>
           <div className="flex-1 w-[1px] bg-white/5 mx-auto" />
           <span className="tracking-widest text-primary/40">PHASE_SYNC_CALIBRATED</span>
         </aside>
 
-        {/* Center Hero Visualizer */}
-        <main className="flex-1 flex flex-col relative overflow-hidden">
-          <div className="absolute top-12 left-12 text-[9px] font-black text-white/30 flex flex-col gap-2 z-30 tracking-widest uppercase">
+        <main className="flex-1 flex flex-col relative overflow-hidden bg-black/20">
+          <div className="absolute top-8 left-10 text-[9px] font-black text-white/30 flex flex-col gap-2 z-30 tracking-widest uppercase">
             <span className="text-primary/70">Section: {currentSection?.label || 'SYS_IDLE'}</span>
             <span>Timecode: {currentTime.toFixed(3)}s</span>
-            <span>Clock: {SONG_METADATA.bpm} BPM</span>
           </div>
 
           <div className="flex-1 relative flex items-center justify-center">
-            <IntegratedWaveform isPlaying={isPlaying} />
+            {/* Hero Visualization - Now Treatment Aware */}
+            <IntegratedWaveform isPlaying={isPlaying} treatment={aiTreatment} />
             <LyricsOverlay currentTime={currentTime} currentSection={currentSection} />
           </div>
         </main>
 
-        {/* Right Creative Monitor */}
         <ProductionMonitor 
           treatment={aiTreatment} 
           isLoading={isAiLoading} 
@@ -165,7 +160,6 @@ export default function VisualizerShell() {
         />
       </div>
 
-      {/* Bottom Transport Console */}
       <AudioController 
         onTimeUpdate={setCurrentTime} 
         onStateChange={setIsPlaying}
