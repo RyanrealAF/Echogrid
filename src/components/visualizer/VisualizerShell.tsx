@@ -13,6 +13,7 @@ import { IntegratedWaveform } from './IntegratedWaveform';
 import { ProductionMonitor } from './ProductionMonitor';
 import { suggestVisualTreatmentsForProductionCue, SuggestVisualTreatmentsForProductionCueOutput } from '@/ai/flows/suggest-visual-treatments-for-production-cue';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export default function VisualizerShell() {
   const [currentTime, setCurrentTime] = useState(0);
