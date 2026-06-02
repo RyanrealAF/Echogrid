@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { SONG_METADATA, Word, LyricLine, SongSection } from '@/lib/song-data';
+import { Word, LyricLine, SongSection } from '@/lib/song-data';
 import { cn } from '@/lib/utils';
 
 interface LyricsOverlayProps {
@@ -26,55 +26,42 @@ export function LyricsOverlay({ currentTime, currentSection }: LyricsOverlayProp
   if (!currentSection) return null;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6 text-center select-none pointer-events-none z-10">
-      <div className="space-y-16 max-w-5xl">
-        {/* Section Header */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-center gap-4">
-            <div className="h-px w-16 bg-primary/20" />
-            <span className="text-[11px] uppercase tracking-[0.5em] text-primary/80 font-headline font-black glow-text">
-              {currentSection.label.split('—')[0]}
-            </span>
-            <div className="h-px w-16 bg-primary/20" />
-          </div>
-        </div>
+    <div className="absolute inset-0 flex flex-col items-center justify-center px-10 text-center select-none pointer-events-none z-30">
+      <div className="max-w-6xl">
+        {currentSection.lines.map((line, lIdx) => (
+          <div 
+            key={lIdx} 
+            className={cn(
+              "transition-all duration-700 flex flex-wrap justify-center gap-x-3 gap-y-2",
+              activeLineIndex === lIdx ? "opacity-100 scale-100" : "opacity-0 scale-95"
+            )}
+          >
+            {line.words.map((wordObj, wIdx) => {
+              const isActive = currentTime >= wordObj.start;
+              const isCurrent = isActive && (line.words[wIdx+1] ? currentTime < line.words[wIdx+1].start : true);
+              
+              // WAVIE Style: Highlighting "impact" words vs connective tissue
+              const isImpact = wordObj.accent || wordObj.word.length > 5 || wordObj.word === wordObj.word.toUpperCase();
 
-        {/* Lyric Content */}
-        <div className="space-y-12">
-          {currentSection.lines.map((line, lIdx) => (
-            <div 
-              key={lIdx} 
-              className={cn(
-                "transition-all duration-1000 transform",
-                activeLineIndex === lIdx 
-                  ? "opacity-100 translate-y-0 scale-100 blur-0" 
-                  : "opacity-10 translate-y-4 scale-95 blur-md"
-              )}
-            >
-              <div className="flex flex-wrap justify-center gap-x-6 gap-y-4">
-                {line.words.map((wordObj, wIdx) => {
-                  const isActive = currentTime >= wordObj.start;
-                  const isCurrent = isActive && (line.words[wIdx+1] ? currentTime < line.words[wIdx+1].start : true);
-                  
-                  return (
-                    <span
-                      key={wIdx}
-                      className={cn(
-                        "font-headline uppercase font-black tracking-tighter transition-all duration-500",
-                        currentSection.type === 'hook' ? "text-6xl md:text-8xl" : "text-5xl md:text-7xl",
-                        isActive ? "text-white" : "text-white/5",
-                        isCurrent && "glow-text scale-110 translate-y-[-4px] animate-word-active",
-                        wordObj.accent && isActive && "text-secondary glow-text-secondary brightness-125"
-                      )}
-                    >
-                      {wordObj.word}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
+              return (
+                <span
+                  key={wIdx}
+                  className={cn(
+                    "transition-all duration-300 transform",
+                    isImpact 
+                      ? "text-5xl md:text-7xl font-black uppercase tracking-tighter" 
+                      : "text-3xl md:text-4xl font-medium italic lowercase tracking-tight",
+                    isActive ? "text-white" : "text-white/10",
+                    isCurrent && isImpact && "glow-text scale-110 -translate-y-1 brightness-150",
+                    isCurrent && !isImpact && "text-white/90 scale-105"
+                  )}
+                >
+                  {wordObj.word}
+                </span>
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );
