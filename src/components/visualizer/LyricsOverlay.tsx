@@ -1,5 +1,6 @@
 /**
- * @fileOverview Word-level precision lyrics overlay with cinematic typography.
+ * @fileOverview Speaker-aware lyrics overlay for LOVE IN THE RUIN.
+ * Displays one line at a time with expressive typography.
  */
 "use client";
 
@@ -11,6 +12,27 @@ interface LyricsOverlayProps {
   currentTime: number;
   currentSection: SongSection | null;
 }
+
+const SPEAKER_STYLES = {
+  female: {
+    font: 'font-light italic',
+    color: 'text-[#A5F3FC]', // Cool blue
+    glow: 'shadow-[#A5F3FC]/50',
+    transition: 'duration-1000'
+  },
+  male: {
+    font: 'font-black uppercase',
+    color: 'text-[#FCD34D]', // Warm amber
+    glow: 'shadow-[#FCD34D]/50',
+    transition: 'duration-500'
+  },
+  sample: {
+    font: 'font-normal tracking-widest uppercase opacity-40 blur-[0.5px]',
+    color: 'text-[#C4A484]', // Vintage sepia
+    glow: 'shadow-[#C4A484]/30',
+    transition: 'duration-1500'
+  }
+};
 
 export function LyricsOverlay({ currentTime, currentSection }: LyricsOverlayProps) {
   const activeLineIndex = useMemo(() => {
@@ -28,35 +50,38 @@ export function LyricsOverlay({ currentTime, currentSection }: LyricsOverlayProp
 
   if (!currentSection) return null;
 
+  const speakerStyle = SPEAKER_STYLES[currentSection.speaker] || SPEAKER_STYLES.sample;
+
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center px-16 text-center select-none pointer-events-none z-30">
-      <div className="max-w-7xl">
+      <div className="max-w-7xl relative">
         {currentSection.lines.map((line, lIdx) => (
           <div 
             key={lIdx} 
             className={cn(
-              "transition-all duration-1000 flex flex-wrap justify-center gap-x-4 gap-y-4",
-              activeLineIndex === lIdx ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-12 scale-90"
+              "absolute inset-0 flex flex-wrap justify-center items-center gap-x-6 gap-y-4 transition-all",
+              speakerStyle.transition,
+              activeLineIndex === lIdx
+                ? "opacity-100 translate-y-0 scale-100 blur-0"
+                : "opacity-0 translate-y-12 scale-95 blur-md"
             )}
           >
             {line.words.map((wordObj, wIdx) => {
               const isActive = currentTime >= wordObj.start;
-              // A word is "current" if we are past its start time and either there is no next word or we are before the next word's start time
               const isCurrent = isActive && (line.words[wIdx+1] ? currentTime < line.words[wIdx+1].start : true);
-              
-              const isImpact = wordObj.accent || wordObj.word.length > 5 || wordObj.word === wordObj.word.toUpperCase();
+              const isAccent = wordObj.accent;
 
               return (
                 <span
                   key={wIdx}
                   className={cn(
-                    "transition-all duration-500 transform inline-block leading-none",
-                    isImpact 
-                      ? "text-6xl md:text-8xl font-black uppercase tracking-tighter" 
-                      : "text-3xl md:text-5xl font-medium italic lowercase tracking-tight opacity-80",
-                    isActive ? "text-white" : "text-white/5",
-                    isCurrent && isImpact && "glow-text scale-110 -translate-y-2 brightness-200",
-                    isCurrent && !isImpact && "text-white/90 scale-105 opacity-100"
+                    "transition-all duration-300 transform inline-block leading-tight",
+                    speakerStyle.font,
+                    isActive ? speakerStyle.color : "text-white/5",
+                    currentSection.speaker === 'female' ? "text-5xl md:text-7xl" : "text-6xl md:text-8xl",
+                    isCurrent && "scale-110",
+                    isCurrent && isAccent && "glow-text brightness-150 -translate-y-2",
+                    isAccent && "underline decoration-primary/30 underline-offset-8"
                   )}
                 >
                   {wordObj.word}
@@ -67,10 +92,10 @@ export function LyricsOverlay({ currentTime, currentSection }: LyricsOverlayProp
         ))}
       </div>
       
-      {/* Ambient Section Type Indicator */}
-      <div className="absolute bottom-24 left-1/2 -translate-x-1/2 opacity-20">
-        <span className="text-[10px] font-black tracking-[1em] text-white uppercase italic">
-          // {currentSection.type}_VOX_BUFFER
+      {/* Ambient Section Marker */}
+      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 opacity-10">
+        <span className="text-[9px] font-black tracking-[1.5em] text-white uppercase">
+          // {currentSection.speaker}_VOX_ENGAGED
         </span>
       </div>
     </div>
